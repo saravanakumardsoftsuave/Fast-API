@@ -52,7 +52,7 @@ class categiores:
                                         {"$set":update.dict()})
         return {
             'message':'updated',
-            'cat_id':str(update['_id'])
+            'cat_id':str(cat['_id'])
         }
 
     async def delete(self,cat_name):

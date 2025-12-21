@@ -23,7 +23,7 @@ async def retr(book_id:int,review_id:int,db=Depends(get_database)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail='No data Founded')
     return result
 
-@review_route.get('/update/{review_id}')
+@review_route.put('/update/{review_id}')
 async def updating(review_id:int,update:updates,db=Depends(get_database)):
     res=review_ser(db)
     result= await res.update(review_id,update)

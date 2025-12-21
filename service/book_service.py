@@ -63,7 +63,7 @@ class book_service:
                                         {"$set":update.dict()})
         return {
             'message':'updated',
-            'book_id':str(update['_id'])
+            'book_id':str(book['_id'])
         }
 
     

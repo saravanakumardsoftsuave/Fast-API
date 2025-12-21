@@ -66,11 +66,14 @@ class user_class:
         user = await self.collection.find_one({'email': email})
         if not user:
             return None
-        new = update.dict()
+        new = update.dict(exclude_unset=True)
+        if "password" in new:
+            new["password"] = hash_password(new["password"])
         await self.collection.update_one({"email": email},{"$set": new})
+        
         return {
         "message": "Updated successfully",
-        "User_id": str(new["_id"])}
+        "User_id": user["user_id"]}
 
     
 

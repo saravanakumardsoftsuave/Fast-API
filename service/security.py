@@ -12,11 +12,11 @@ ALOGRITHM='HS256'
 ACCESS_TIME=1440 
 REFRESH_TOKEN_EXPIRE_DAYS = 1
 
-async def get_current(token: str, db=Depends(get_database)):
+async def get_current(token: str=Depends(oauth2), db=Depends(get_database)):
     try:
         payload = jwt.decode(token,SCERET_KEY, algorithms=[ALOGRITHM])
-        user_id = payload.get('sub')
-        if not user_id:
+        email= payload.get('sub')
+        if not email:
             raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail='Invalid token')
@@ -26,9 +26,11 @@ async def get_current(token: str, db=Depends(get_database)):
             detail='Token expired'
         )
     
-    user = await db['user_create'].find_one({'user_id': int(user_id)})
+    user = await db['user_create'].find_one({'email':email})
     if not user:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND
+        )
     
     return user
 
@@ -42,6 +44,7 @@ def refresh_tok(data:dict):
     exp=datetime.now()+timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     encode.update({'exp':exp})
     return jwt.encode(encode,SCERET_KEY,algorithm=ALOGRITHM)
+
 pwt_context=CryptContext(schemes=['bcrypt'],deprecated='auto')
 
 @staticmethod

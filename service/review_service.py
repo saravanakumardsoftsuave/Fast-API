@@ -4,36 +4,7 @@ class review_ser:
         self.collection=db['reviews']
         self.users=db['user_create']
         self.book=db['books']
-    # async def retr_one(self,book_id):
-    #     pipeline=[
-    #         {'$match':{'book_id':book_id}},
-    #         # {
-    #         #     '$lookup':{
-    #         #         'from':'reviews',
-    #         #         'localField':'book_id',
-    #         #         'foreignField':'book_id',
-    #         #         'as':'reviews'
-    #         #     }
-    #         # },
-    #         {
-    #             '$lookup':
-    #             {
-    #                 'from':'users_create',
-    #                 'localField':'user_id',
-    #                 'foreignField':'user_id',
-    #                 'as':'user_create'
-    #             }
-    #         },
-    #         {
-    #             '$project':{
-    #                 '_id':0,
-    #                 # 'reviews._id':0,
-    #                 'user_create._id':0
-    #             }
-    #         }
-    #     ]
-    #     return await self.collection.aggregate(pipeline).to_list(None)
-    
+   
     async def create_one(self,review,book_id,user_id):
         book = await self.book.find_one({ 'book_id' : book_id })
         if not book:
@@ -46,6 +17,11 @@ class review_ser:
         review_dict['book_id'] = book_id
         review_dict['user_id'] = user_id
         await self.collection.insert_one(review_dict)
+
+        await self.users.update_one(
+            {'user_id': user_id},
+            {'$inc': {'review_count': 1}}
+        )
         return{
             'message':'created'
         }
