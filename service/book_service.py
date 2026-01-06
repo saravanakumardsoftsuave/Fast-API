@@ -25,20 +25,47 @@ class book_service:
         b=await self.collection.find_one({'book_id':book_id})
         if not b:
             return None
-        b['_id']=str(b['_id'])
-        auth=await self.author.find_one({'author_id':b['author_id']})
-        if auth:
-            auth["_id"]=str(auth['_id'])
+        pipeline = [
+    {'$match': {'book_id': book_id}},
 
-        category=await self.cat.find_one({'cat_id':b['cat_id']})
-        if category:
-            category['_id']=str(category['_id'])
-        
-        return {
-            'Book':b,
-            'Author':auth,
-            'Category':category
-        }
+    # Join author (single object)
+    {'$lookup': {
+        'from': 'Authors_Books',
+        'localField': 'author_id',
+        'foreignField': 'author_id',
+        'as': 'author'
+    }},
+    {'$unwind': {'path': '$author', 'preserveNullAndEmptyArrays': True}},
+    {'$addFields': {'author': {'$ifNull': ['$author', None]}}},
+
+    # Join categories (keep as list)
+    {'$lookup': {
+        'from': 'categories1',
+        'localField': 'cat_id',
+        'foreignField': 'cat_id',
+        'as': 'cat'  # DO NOT unwind
+    }},
+    {'$addFields': {'cat': {'$ifNull': ['$cat', []]}}}  
+]
+        res=self.collection.aggregate(pipeline)
+        b=await res.to_list(length=None)
+        if not b:
+            return None
+        book=b[0]
+        book['_id'] = str(book['_id'])
+
+
+        if book.get('author'):
+            book['author']['_id'] = str(book['author']['_id'])
+
+        # Convert _id for each category in the list
+        if book.get('cat'):
+            for cat in book['cat']:
+                cat['_id'] = str(cat['_id'])
+
+        return book
+
+
     async def retireve_all(self,limit,page):
         t=await self.collection.count_documents({})
         skip=(page-1)*limit
